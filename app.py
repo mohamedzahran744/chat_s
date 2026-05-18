@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 import streamlit as st
 
-# 1. Page Config
+# 1. Page Configuration
 st.set_page_config(
     page_title="SemSemty AI 🌸",
     page_icon="🐾",
@@ -14,41 +14,53 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 2. CSS to allow opening/closing while keeping the toggle visible
+# 2. UI Persistence & Secret Message Styling
 st.markdown("""
     <style>
-        /* Ensure the 'Open/Close' toggle sign (chevron) is ALWAYS visible */
+        /* FORCE the toggle button (chevron) to stay visible when sidebar is closed */
         [data-testid="collapsedControl"] {
             display: flex !important;
             visibility: visible !important;
-            color: #ff4bad !important; /* SemSemty Pink */
-            background-color: rgba(255, 255, 255, 0.9) !important;
-            border-radius: 0 10px 10px 0 !important;
-            left: 0 !important;
+            opacity: 1 !important;
+            left: 12px !important;
+            top: 12px !important;
+            color: #ff4bad !important;
+            background-color: white !important;
+            border-radius: 50% !important;
+            box-shadow: 0px 4px 12px rgba(255, 75, 173, 0.3) !important;
             z-index: 1000000 !important;
-            box-shadow: 2px 2px 10px rgba(255, 75, 173, 0.2) !important;
+            width: 42px !important;
+            height: 42px !important;
+            justify-content: center !important;
+            align-items: center !important;
+            border: 1px solid #ffe0f0 !important;
         }
 
-        /* Hover effect for the toggle sign */
+        /* Hover effect for the toggle button */
         [data-testid="collapsedControl"]:hover {
-            color: #ff1f93 !important;
+            transform: scale(1.1);
             background-color: #fff0f7 !important;
         }
 
-        /* Subtle Branding Footer for the sidebar */
-        .sidebar-secret-footer {
+        /* Subtle Branding Footer inside the sidebar */
+        .sidebar-footer {
             position: fixed;
-            bottom: 10px;
-            left: 10px;
-            font-size: 10px;
+            bottom: 15px;
+            left: 20px;
+            font-size: 11px;
             color: #ffb6c1;
-            opacity: 0.6;
-            z-index: 99;
+            font-family: 'Courier New', Courier, monospace;
+            opacity: 0.7;
+        }
+        
+        /* Ensure main content doesn't get hidden behind the floating button */
+        .main .block-container {
+            padding-top: 3rem !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# ── Load .env ────────────────────────────────────────────────────
+# ── Load Environment (.env) ──────────────────────────────────────
 _env_path = Path(__file__).parent / ".env"
 try:
     from dotenv import load_dotenv
@@ -61,6 +73,7 @@ except ImportError:
                 k, v = line.split("=", 1)
                 os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
+# Import project-specific components
 from constants.chat_data import APP_VERSION
 from components.styles import inject_css
 from components.sidebar import render_sidebar
@@ -71,9 +84,10 @@ from components.chat import (
     handle_chat_input,
 )
 
+# Apply baseline component styles
 inject_css()
 
-# ── Session state defaults ───────────────────────────────────────
+# ── Session State Initialization ─────────────────────────────────
 defaults = {
     "messages":          [],
     "mode":              "🩻 Radiology Q&A",
@@ -92,27 +106,27 @@ for k, v in defaults.items():
         st.session_state[k] = v
 
 # ── Sidebar ──────────────────────────────────────────────────────
-# Secret Message in Sidebar UI (Stays hidden/subtle at bottom)
-st.sidebar.markdown('<div class="sidebar-secret-footer">🌸 M ❤️ S</div>', unsafe_allow_html=True)
+# The Secret Message Tag
+st.sidebar.markdown('<div class="sidebar-footer">🌸 M ❤️ S | v1.0</div>', unsafe_allow_html=True)
 
+# Render sidebar and capture outputs
 sidebar_out = render_sidebar(dict(st.session_state))
 
-# Update logic
+# Update state from sidebar UI
 for key in ("mode", "mood", "voice_output"):
     st.session_state[key] = sidebar_out[key]
 
+# Clear Chat functionality
 if sidebar_out.get("clear"):
-    st.session_state.messages = []
-    st.session_state.file_context = ""
-    st.session_state.file_name = ""
-    st.session_state.image_data = None
-    st.session_state.image_media_type = "image/jpeg"
+    for key in ["messages", "file_context", "file_name", "image_data"]:
+        st.session_state[key] = defaults[key]
     st.rerun()
 
+# Voice input handling
 if sidebar_out.get("pending_voice"):
     st.session_state.pending_input = sidebar_out["pending_voice"]
 
-# ── Main area ────────────────────────────────────────────────────
+# ── Main Area ────────────────────────────────────────────────────
 if not st.session_state.messages:
     render_empty_state()
     render_quick_actions()
