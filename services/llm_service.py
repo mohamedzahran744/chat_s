@@ -98,7 +98,8 @@ def chat_with_semsemty(
             ],
         }
 
-        model = "meta-llama/llama-4-scout-17b-16e-instruct"
+        # تعديل هنا: استخدام موديل الرؤية المدعوم رسمياً من Groq لمنع الـ 403
+        model = "llama-3.2-11b-vision-preview"
     else:
         model = GROQ_MODEL
 
