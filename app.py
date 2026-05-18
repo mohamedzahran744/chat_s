@@ -1,12 +1,8 @@
-"""
-SemSemty AI 🌸 — A cute pink radiology assistant made with love for Sama 💗🐾
-Made with endless love by Mohamed ✨
-"""
 import os
 from pathlib import Path
 import streamlit as st
 
-# 1. Page Configuration
+# 1. الإعدادات الأساسية
 st.set_page_config(
     page_title="SemSemty AI 🌸",
     page_icon="🐾",
@@ -14,74 +10,43 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 2. Strong UI Overrides & Secret Message Styling
+# 2. Advanced CSS for Sidebar and Secret Message
 st.markdown("""
     <style>
-        /* Target BOTH potential Streamlit collapsed button containers */
-        [data-testid="collapsedControl"], 
-        .stSidebarCollapseButton,
-        button[aria-label="Open sidebar"] {
+        /* The Secret Message (Hidden in Source/UI) */
+        /* SemSemty AI 🌸 — A cute pink radiology assistant made with love for Sama 💗🐾 */
+        /* Made with endless love by Mohamed ✨ */
+
+        /* Force Sidebar to stay visible and style the toggle */
+        [data-testid="stSidebar"] {
+            min-width: 300px !important;
+            max-width: 300px !important;
+        }
+
+        /* Make sure the opening/closing chevron is always visible and pink */
+        [data-testid="collapsedControl"] {
             display: flex !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            
-            /* Position it prominently in the upper left corner over your background */
-            position: fixed !important;
-            left: 20px !important;
-            top: 20px !important;
-            z-index: 9999999 !important;
-            
-            /* High contrast design against your dark theme */
-            color: #ffffff !important;
-            background-color: #ff4bad !important; /* SemSemty Pink */
-            border-radius: 50% !important;
-            width: 45px !important;
-            height: 45px !important;
-            box-shadow: 0px 4px 15px rgba(255, 75, 173, 0.6) !important;
-            
-            /* Center the chevron icon inside the circle */
-            justify-content: center !important;
-            align-items: center !important;
-            border: 2px solid #ffffff !important;
-            transition: transform 0.2s ease, background-color 0.2s ease !important;
+            color: #ff4bad !important;
+            background-color: rgba(255, 75, 173, 0.1);
+            border-radius: 0 10px 10px 0;
         }
 
-        /* Hover animation so it feels responsive and alive */
-        [data-testid="collapsedControl"]:hover,
-        button[aria-label="Open sidebar"]:hover {
-            transform: scale(1.15) !important;
-            background-color: #ff1f93 !important;
-            cursor: pointer !important;
-        }
-
-        /* Ensure the internal icon itself inherits the correct bright white color */
-        [data-testid="collapsedControl"] svg,
-        button[aria-label="Open sidebar"] svg {
-            fill: #ffffff !important;
-            color: #ffffff !important;
-            width: 24px !important;
-            height: 24px !important;
-        }
-
-        /* Subtle Branding Footer inside the sidebar */
+        /* Custom style for the secret footer in the sidebar */
         .sidebar-footer {
             position: fixed;
-            bottom: 15px;
-            left: 20px;
-            font-size: 11px;
+            bottom: 10px;
+            left: 10px;
+            font-size: 10px;
             color: #ffb6c1;
-            font-family: 'Courier New', Courier, monospace;
-            opacity: 0.7;
-        }
-        
-        /* Add safety spacing to prevent top element collisions */
-        .main .block-container {
-            padding-top: 4rem !important;
+            opacity: 0.5;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# ── Load Environment (.env) ──────────────────────────────────────
+# ── Secret Message Injection (Visible only if you look closely) ──
+st.sidebar.markdown('<div class="sidebar-footer">🌸 S.A.I. v1.0 - M❤️S</div>', unsafe_allow_html=True)
+
+# ── Load .env ────────────────────────────────────────────────────
 _env_path = Path(__file__).parent / ".env"
 try:
     from dotenv import load_dotenv
@@ -94,7 +59,7 @@ except ImportError:
                 k, v = line.split("=", 1)
                 os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
-# Import project-specific components
+# Import custom components (Ensure these files exist in your directory)
 from constants.chat_data import APP_VERSION
 from components.styles import inject_css
 from components.sidebar import render_sidebar
@@ -105,10 +70,9 @@ from components.chat import (
     handle_chat_input,
 )
 
-# Apply baseline component styles
 inject_css()
 
-# ── Session State Initialization ─────────────────────────────────
+# ── Session state defaults ───────────────────────────────────────
 defaults = {
     "messages":          [],
     "mode":              "🩻 Radiology Q&A",
@@ -127,28 +91,27 @@ for k, v in defaults.items():
         st.session_state[k] = v
 
 # ── Sidebar ──────────────────────────────────────────────────────
-# The Secret Message Tag
-st.sidebar.markdown('<div class="sidebar-footer">🌸 M ❤️ S | v1.0</div>', unsafe_allow_html=True)
-
-# Render sidebar and capture outputs
 sidebar_out = render_sidebar(dict(st.session_state))
 
-# Update state from sidebar UI
+# Update session state based on sidebar interactions
 for key in ("mode", "mood", "voice_output"):
     st.session_state[key] = sidebar_out[key]
 
-# Clear Chat functionality
 if sidebar_out.get("clear"):
-    for key in ["messages", "file_context", "file_name", "image_data"]:
-        st.session_state[key] = defaults[key]
+    st.session_state.messages         = []
+    st.session_state.file_context      = ""
+    st.session_state.file_name         = ""
+    st.session_state.image_data        = None
+    st.session_state.image_media_type  = "image/jpeg"
     st.rerun()
 
-# Voice input handling
 if sidebar_out.get("pending_voice"):
     st.session_state.pending_input = sidebar_out["pending_voice"]
 
-# ── Main Area ────────────────────────────────────────────────────
-if not st.session_state.messages:
+# ── Main area ────────────────────────────────────────────────────
+has_messages = bool(st.session_state.messages)
+
+if not has_messages:
     render_empty_state()
     render_quick_actions()
     handle_chat_input()
