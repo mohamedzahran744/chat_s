@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 import streamlit as st
 
-# 1. Basic config (must come first)
+# 1. Page Config
 st.set_page_config(
     page_title="SemSemty AI 🌸",
     page_icon="🐾",
@@ -14,60 +14,43 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 2. CSS + JS injection — keeps sidebar locked open
+# 2. CSS to lock sidebar and keep toggle visible
 st.markdown("""
     <style>
-        /* 💗 Made with love by Mohamed for Sama — always and forever 💗 */
+        /* Force sidebar to stay visible and prevent sliding away */
+        [data-testid="stSidebar"] {
+            transform: none !important;
+            visibility: visible !important;
+            min-width: 300px !important;
+        }
 
-        /* Hide the (X) close button inside the sidebar */
+        /* Ensure the 'Open/Close' toggle sign is always visible and pink */
+        [data-testid="collapsedControl"] {
+            display: flex !important;
+            visibility: visible !important;
+            color: #ff4bad !important;
+            background-color: rgba(255, 255, 255, 0.8) !important;
+            border-radius: 0 10px 10px 0 !important;
+            left: 0 !important;
+            z-index: 1000000 !important;
+        }
+
+        /* Hide the 'X' close button inside the sidebar to prevent accidental closing */
         [data-testid="stSidebar"] button[kind="header"] {
             display: none !important;
         }
 
-        /* Keep the open/close arrow ALWAYS visible */
-        [data-testid="collapsedControl"] {
-            visibility: visible !important;
-            opacity: 1 !important;
-            display: flex !important;
-        }
-
-        /* Lock sidebar width on mobile and prevent slide-out */
-        @media (max-width: 991.98px) {
-            section[data-testid="stSidebar"] {
-                width: 300px !important;
-                position: fixed !important;
-                z-index: 1000001 !important;
-                transform: none !important;
-                visibility: visible !important;
-            }
+        /* Secret branding footer for the sidebar */
+        .sidebar-secret-footer {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 10px;
+            color: #ffb6c1;
+            opacity: 0.6;
+            z-index: 99;
         }
     </style>
-
-    <script>
-        // Force sidebar open on every load/rerun
-        (function keepSidebarOpen() {
-            function openSidebar() {
-                // Streamlit stores sidebar state in localStorage
-                const key = Object.keys(localStorage).find(k => k.includes('sidebar'));
-                if (key) {
-                    localStorage.setItem(key, 'expanded');
-                }
-
-                // If sidebar has collapsed class, click the toggle to reopen
-                const sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
-                const collapsed = window.parent.document.querySelector('[data-testid="collapsedControl"]');
-                
-                if (sidebar && sidebar.getAttribute('aria-expanded') === 'false' && collapsed) {
-                    collapsed.click();
-                }
-            }
-
-            // Run immediately and then watch for changes
-            openSidebar();
-            const observer = new MutationObserver(openSidebar);
-            observer.observe(window.parent.document.body, { attributes: true, subtree: true });
-        })();
-    </script>
 """, unsafe_allow_html=True)
 
 # ── Load .env ────────────────────────────────────────────────────
@@ -114,8 +97,10 @@ for k, v in defaults.items():
         st.session_state[k] = v
 
 # ── Sidebar ──────────────────────────────────────────────────────
-sidebar_out = render_sidebar(dict(st.session_state))
+# Secret Message in Sidebar UI
+st.sidebar.markdown('<div class="sidebar-secret-footer">🌸 M ❤️ S</div>', unsafe_allow_html=True)
 
+sidebar_out = render_sidebar(dict(st.session_state))
 for key in ("mode", "mood", "voice_output"):
     st.session_state[key] = sidebar_out[key]
 
