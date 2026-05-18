@@ -14,33 +14,28 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 2. CSS to lock sidebar and keep toggle visible
+# 2. CSS to allow opening/closing while keeping the toggle visible
 st.markdown("""
     <style>
-        /* Force sidebar to stay visible and prevent sliding away */
-        [data-testid="stSidebar"] {
-            transform: none !important;
-            visibility: visible !important;
-            min-width: 300px !important;
-        }
-
-        /* Ensure the 'Open/Close' toggle sign is always visible and pink */
+        /* Ensure the 'Open/Close' toggle sign (chevron) is ALWAYS visible */
         [data-testid="collapsedControl"] {
             display: flex !important;
             visibility: visible !important;
-            color: #ff4bad !important;
-            background-color: rgba(255, 255, 255, 0.8) !important;
+            color: #ff4bad !important; /* SemSemty Pink */
+            background-color: rgba(255, 255, 255, 0.9) !important;
             border-radius: 0 10px 10px 0 !important;
             left: 0 !important;
             z-index: 1000000 !important;
+            box-shadow: 2px 2px 10px rgba(255, 75, 173, 0.2) !important;
         }
 
-        /* Hide the 'X' close button inside the sidebar to prevent accidental closing */
-        [data-testid="stSidebar"] button[kind="header"] {
-            display: none !important;
+        /* Hover effect for the toggle sign */
+        [data-testid="collapsedControl"]:hover {
+            color: #ff1f93 !important;
+            background-color: #fff0f7 !important;
         }
 
-        /* Secret branding footer for the sidebar */
+        /* Subtle Branding Footer for the sidebar */
         .sidebar-secret-footer {
             position: fixed;
             bottom: 10px;
@@ -97,28 +92,28 @@ for k, v in defaults.items():
         st.session_state[k] = v
 
 # ── Sidebar ──────────────────────────────────────────────────────
-# Secret Message in Sidebar UI
+# Secret Message in Sidebar UI (Stays hidden/subtle at bottom)
 st.sidebar.markdown('<div class="sidebar-secret-footer">🌸 M ❤️ S</div>', unsafe_allow_html=True)
 
 sidebar_out = render_sidebar(dict(st.session_state))
+
+# Update logic
 for key in ("mode", "mood", "voice_output"):
     st.session_state[key] = sidebar_out[key]
 
 if sidebar_out.get("clear"):
-    st.session_state.messages         = []
-    st.session_state.file_context      = ""
-    st.session_state.file_name         = ""
-    st.session_state.image_data        = None
-    st.session_state.image_media_type  = "image/jpeg"
+    st.session_state.messages = []
+    st.session_state.file_context = ""
+    st.session_state.file_name = ""
+    st.session_state.image_data = None
+    st.session_state.image_media_type = "image/jpeg"
     st.rerun()
 
 if sidebar_out.get("pending_voice"):
     st.session_state.pending_input = sidebar_out["pending_voice"]
 
 # ── Main area ────────────────────────────────────────────────────
-has_messages = bool(st.session_state.messages)
-
-if not has_messages:
+if not st.session_state.messages:
     render_empty_state()
     render_quick_actions()
     handle_chat_input()
