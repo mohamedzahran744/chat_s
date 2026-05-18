@@ -1,8 +1,12 @@
+"""
+SemSemty AI 🌸 — A cute pink radiology assistant made with love for Sama 💗🐾
+Made with endless love by Mohamed ✨
+"""
 import os
 from pathlib import Path
 import streamlit as st
 
-# 1. Basic Page Configuration
+# 1. Page Config
 st.set_page_config(
     page_title="SemSemty AI 🌸",
     page_icon="🐾",
@@ -10,50 +14,46 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 2. UI Persistence & Secret Message Styling
-# 🌸 SemSemty AI — A cute pink radiology assistant made for Sama 💗🐾
-# ✨ Made with endless love by Mohamed
+# 2. CSS to lock sidebar and keep toggle visible
 st.markdown("""
     <style>
-        /* Force Sidebar Visibility */
+        /* Force sidebar to stay visible and prevent sliding away */
         [data-testid="stSidebar"] {
             transform: none !important;
             visibility: visible !important;
             min-width: 300px !important;
-            max-width: 300px !important;
-            border-right: 2px solid rgba(255, 75, 173, 0.2);
         }
 
-        /* Keep the Open/Close Sign Always Visible */
+        /* Ensure the 'Open/Close' toggle sign is always visible and pink */
         [data-testid="collapsedControl"] {
             display: flex !important;
             visibility: visible !important;
-            left: 0 !important;
             color: #ff4bad !important;
-            background-color: white !important;
-            border-radius: 0 50% 50% 0 !important;
-            box-shadow: 2px 2px 8px rgba(255, 75, 173, 0.3) !important;
+            background-color: rgba(255, 255, 255, 0.8) !important;
+            border-radius: 0 10px 10px 0 !important;
+            left: 0 !important;
             z-index: 1000000 !important;
         }
 
-        /* Hide the internal 'X' to discourage closing from inside */
+        /* Hide the 'X' close button inside the sidebar to prevent accidental closing */
         [data-testid="stSidebar"] button[kind="header"] {
             display: none !important;
         }
 
-        /* Subtle Branding Footer in Sidebar */
-        .sidebar-footer {
+        /* Secret branding footer for the sidebar */
+        .sidebar-secret-footer {
             position: fixed;
-            bottom: 15px;
-            left: 20px;
-            font-size: 11px;
+            bottom: 10px;
+            left: 10px;
+            font-size: 10px;
             color: #ffb6c1;
-            font-family: 'Courier New', Courier, monospace;
+            opacity: 0.6;
+            z-index: 99;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# ── Environment & Imports ────────────────────────────────────────
+# ── Load .env ────────────────────────────────────────────────────
 _env_path = Path(__file__).parent / ".env"
 try:
     from dotenv import load_dotenv
@@ -76,7 +76,6 @@ from components.chat import (
     handle_chat_input,
 )
 
-# Apply component-specific styles
 inject_css()
 
 # ── Session state defaults ───────────────────────────────────────
@@ -97,26 +96,29 @@ for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# ── Sidebar Content ──────────────────────────────────────────────
-# Secret tag in the sidebar
-st.sidebar.markdown('<div class="sidebar-footer">SemSemty AI 🌸 v1.0</div>', unsafe_allow_html=True)
+# ── Sidebar ──────────────────────────────────────────────────────
+# Secret Message in Sidebar UI
+st.sidebar.markdown('<div class="sidebar-secret-footer">🌸 M ❤️ S</div>', unsafe_allow_html=True)
 
 sidebar_out = render_sidebar(dict(st.session_state))
-
-# Sync sidebar changes to session state
 for key in ("mode", "mood", "voice_output"):
     st.session_state[key] = sidebar_out[key]
 
 if sidebar_out.get("clear"):
-    for key in ["messages", "file_context", "file_name", "image_data"]:
-        st.session_state[key] = defaults[key]
+    st.session_state.messages         = []
+    st.session_state.file_context      = ""
+    st.session_state.file_name         = ""
+    st.session_state.image_data        = None
+    st.session_state.image_media_type  = "image/jpeg"
     st.rerun()
 
 if sidebar_out.get("pending_voice"):
     st.session_state.pending_input = sidebar_out["pending_voice"]
 
-# ── Main Chat Area ───────────────────────────────────────────────
-if not st.session_state.messages:
+# ── Main area ────────────────────────────────────────────────────
+has_messages = bool(st.session_state.messages)
+
+if not has_messages:
     render_empty_state()
     render_quick_actions()
     handle_chat_input()
