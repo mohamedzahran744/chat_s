@@ -1,12 +1,7 @@
-"""
-components/sidebar.py — SemSemty AI Pink Sidebar 🌸
-API key is loaded automatically from .env — no user input needed.
-"""
-import random
+import os
 import streamlit as st
 from constants.chat_data import APP_VERSION, MODES, MOODS, MODE_META, LOVE_MESSAGES
 from components.file_handler import extract_text_from_file, build_file_context
-
 
 def _label(text: str, emoji: str = "") -> None:
     st.markdown(
@@ -15,7 +10,6 @@ def _label(text: str, emoji: str = "") -> None:
         f'{emoji} {text}</p>',
         unsafe_allow_html=True,
     )
-
 
 def _mode_card(desc: str, color: str) -> None:
     st.markdown(
@@ -27,10 +21,27 @@ def _mode_card(desc: str, color: str) -> None:
         unsafe_allow_html=True,
     )
 
-
 def render_sidebar(state: dict) -> dict:
-    with st.sidebar:
+    # ── FIXED SIDEBAR CSS ──────────────────────────────────────
+    # This block hides the close button and the collapse toggle
+    st.markdown("""
+        <style>
+            /* Hide the collapse button (the X) inside the sidebar */
+            [data-testid="stSidebar"] button {
+                display: none !important;
+            }
+            /* Hide the sidebar expander button (the chevron) if it were closed */
+            [data-testid="collapsedControl"] {
+                display: none !important;
+            }
+            /* Optional: prevent horizontal scrolling in the sidebar */
+            [data-testid="stSidebar"] > div:first-child {
+                overflow-x: hidden;
+            }
+        </style>
+    """, unsafe_allow_html=True)
 
+    with st.sidebar:
         # ── Header ────────────────────────────────────────────────
         st.markdown("""
 <div style="text-align:center;padding:1.5rem 0 1rem;">
@@ -59,10 +70,10 @@ def render_sidebar(state: dict) -> dict:
 
         # ── Mode ──────────────────────────────────────────────────
         _label("Mode", "🩻")
-        mode  = st.radio("mode_radio", MODES,
-                         index=MODES.index(state.get("mode", MODES[0])),
-                         label_visibility="collapsed")
-        meta  = MODE_META.get(mode, {})
+        mode = st.radio("mode_radio", MODES,
+                        index=MODES.index(state.get("mode", MODES[0])),
+                        label_visibility="collapsed")
+        meta = MODE_META.get(mode, {})
         color = meta.get("color", "#FF5FA2")
         if meta:
             _mode_card(meta.get("desc", ""), color)
@@ -79,7 +90,7 @@ def render_sidebar(state: dict) -> dict:
             "😊 Happy":       ("Yay! Happy Sama!",      "Full pink energy today 🌸"),
             "😴 Sleepy":      ("Rest mode on!",          "I'll be extra gentle 💕"),
             "📚 Study Mode":  ("Study queen activated!", "Let's ace radiology 🩻"),
-            "💖 Need Love":   ("Come here for hugs!",   "You're so loved Semsem 💗"),
+            "💖 Need Love":   ("Come here for hugs!",    "You're so loved Semsem 💗"),
         }
         title, sub = mood_msgs.get(mood, ("", ""))
         if title:
@@ -104,7 +115,7 @@ def render_sidebar(state: dict) -> dict:
 
         if is_xray_mode:
             _label("Upload X-Ray / Scan Image", "🔬")
-            st.caption("10 MB max • PNG, JPG, WEBP — X-rays, CT, MRI")
+            st.caption("10 MB max • PNG, JPG, WEBP")
             uploaded = st.file_uploader(
                 "xray_upload",
                 type=["png", "jpg", "jpeg", "webp"],
@@ -113,12 +124,10 @@ def render_sidebar(state: dict) -> dict:
             )
         else:
             _label("Upload Lecture / Notes", "📎")
-            st.caption("10 MB max • PDF, DOCX, TXT, images")
+            st.caption("10 MB max • PDF, DOCX, TXT")
             uploaded = st.file_uploader(
                 "doc_upload",
-                type=["pdf","docx","txt","md","py","cpp","c","h","js","ts",
-                      "java","json","csv","xml","html","css","sql","yaml","yml",
-                      "png","jpg","jpeg","webp","gif"],
+                type=["pdf","docx","txt","md","png","jpg","jpeg","webp"],
                 label_visibility="collapsed",
                 key="doc_uploader",
             )
@@ -132,15 +141,15 @@ def render_sidebar(state: dict) -> dict:
                 st.session_state.file_context     = build_file_context(extracted, label_type, uploaded.name)
                 st.session_state.file_name        = uploaded.name
                 st.session_state.total_files     += 1
-                st.success(f"✅ Ready for analysis: **{uploaded.name}** 🔬")
-                st.image(uploaded, caption=f"🔬 {uploaded.name}", use_container_width=True)
+                st.success(f"✅ Ready: {uploaded.name}")
+                st.image(uploaded, use_container_width=True)
             else:
                 extracted, label_type = result
                 st.session_state.file_context = build_file_context(extracted, label_type, uploaded.name)
                 st.session_state.file_name    = uploaded.name
                 st.session_state.image_data   = None
                 st.session_state.total_files += 1
-                st.success(f"✅ **{uploaded.name}** loaded 🌸")
+                st.success(f"✅ {uploaded.name} loaded 🌸")
 
         if st.session_state.get("file_name"):
             st.markdown(
@@ -154,13 +163,11 @@ def render_sidebar(state: dict) -> dict:
                 st.session_state.file_context     = ""
                 st.session_state.file_name        = ""
                 st.session_state.image_data       = None
-                st.session_state.image_media_type = "image/jpeg"
                 st.rerun()
 
         st.divider()
 
-        # ── API key status (read-only indicator, no input) ────────
-        import os
+        # ── API Status ────────────────────────────────────────────
         groq_key = os.getenv("GROQ_API_KEY", "").strip().strip('"').strip("'")
         if groq_key:
             st.markdown(
@@ -168,13 +175,6 @@ def render_sidebar(state: dict) -> dict:
                 'border:1px solid rgba(52,211,153,0.3);border-radius:12px;padding:.4rem .8rem;'
                 'font-size:.72rem;color:#34d399;font-weight:700;">'
                 '🔑 Groq API connected ✓</div>',
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                '<div style="background:rgba(255,95,100,0.1);border:1px solid rgba(255,95,100,0.3);'
-                'border-radius:12px;padding:.4rem .8rem;font-size:.72rem;color:#ff9999;font-weight:700;">'
-                '⚠️ Add GROQ_API_KEY to .env file</div>',
                 unsafe_allow_html=True,
             )
 
@@ -188,27 +188,14 @@ def render_sidebar(state: dict) -> dict:
         with c2:
             st.metric("📁 Files", state.get("total_files", 0))
 
-        msgs  = state.get("total_messages", 0)
-        level = ("🌱 Beginner"       if msgs < 5  else
-                 "⭐ Explorer"        if msgs < 20 else
-                 "🔥 Study Queen"    if msgs < 50 else
-                 "👑 Radiology Legend")
-        st.markdown(
-            f'<div style="text-align:center;margin-top:.4rem;'
-            f'background:linear-gradient(135deg,rgba(255,182,217,0.08),rgba(201,184,255,0.06));'
-            f'border:1px solid rgba(255,182,217,0.2);border-radius:12px;padding:.4rem;'
-            f'font-size:.73rem;color:rgba(255,182,217,0.6);font-weight:700;">'
-            f'Level: <span style="color:#FF5FA2;">{level}</span></div>',
-            unsafe_allow_html=True,
-        )
-
         st.divider()
 
         clear = st.button("🗑️ Clear Chat", use_container_width=True)
 
         # ── Daily Love Message ────────────────────────────────────
         st.divider()
-        today_msg = LOVE_MESSAGES[hash(str(__import__('datetime').date.today())) % len(LOVE_MESSAGES)]
+        import datetime
+        today_msg = LOVE_MESSAGES[hash(str(datetime.date.today())) % len(LOVE_MESSAGES)]
         st.markdown(f'<div class="secret-msg">{today_msg}</div>', unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
@@ -226,8 +213,6 @@ def render_sidebar(state: dict) -> dict:
     هو فخور بيكي كل يوم 💗<br>
     You are his favorite person 🐾
   </div>
-  <div style="margin-top:.8rem;font-size:1.6rem;animation:floatAnim 2s ease-in-out infinite;
-    display:inline-block;">💗 🌸 🐱 ✨ 💕</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -236,8 +221,7 @@ def render_sidebar(state: dict) -> dict:
 <div style="text-align:center;padding:.9rem 0 .5rem;font-family:'Quicksand',sans-serif;">
   <div style="color:rgba(255,182,217,0.35);font-size:.63rem;line-height:2.2;">
     Made with endless love by Mohamed 💗<br>
-    For Sama — the cutest future radiologist 🩻🐾<br>
-    <span style="color:rgba(201,184,255,0.5);font-weight:800;">Powered by Groq + Llama ✨</span><br>
+    For Sama 🩻🐾<br>
     <span style="opacity:.3;font-size:.57rem;">v{APP_VERSION}</span>
   </div>
 </div>""", unsafe_allow_html=True)
@@ -246,6 +230,6 @@ def render_sidebar(state: dict) -> dict:
         "mode":          mode,
         "mood":          mood,
         "voice_output":  voice_output,
-        "clear":         clear,
+        "clear":          clear,
         "pending_voice": None,
     }
