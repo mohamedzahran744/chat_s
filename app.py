@@ -6,38 +6,68 @@ import os
 from pathlib import Path
 import streamlit as st
 
-# 1. الإعدادات الأساسية (يجب أن تكون في البداية)
+# 1. Basic config (must come first)
 st.set_page_config(
     page_title="SemSemty AI 🌸",
     page_icon="🐾",
     layout="wide",
-    initial_sidebar_state="expanded", # إجبار الحالة الأولية على التمدد
+    initial_sidebar_state="expanded",
 )
 
-# 2. حقن CSS لإجبار الشريط الجانبي على البقاء مفتوحاً ومنع إغلاقه
+# 2. CSS + JS injection — keeps sidebar locked open
 st.markdown("""
     <style>
-        /* إخفاء زر الإغلاق (X) داخل الشريط الجانبي */
+        /* 💗 Made with love by Mohamed for Sama — always and forever 💗 */
+
+        /* Hide the (X) close button inside the sidebar */
         [data-testid="stSidebar"] button[kind="header"] {
             display: none !important;
         }
-        
-        /* إخفاء زر الفتح (السهيم) في حال حاول النظام إغلاقه */
+
+        /* Keep the open/close arrow ALWAYS visible */
         [data-testid="collapsedControl"] {
-            display: none !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            display: flex !important;
         }
 
-        /* تثبيت عرض الشريط الجانبي ومنع اختفائه على الشاشات الصغيرة */
+        /* Lock sidebar width on mobile and prevent slide-out */
         @media (max-width: 991.98px) {
             section[data-testid="stSidebar"] {
                 width: 300px !important;
                 position: fixed !important;
                 z-index: 1000001 !important;
-                transform: none !important; /* يمنع حركة الـ Slide-out */
+                transform: none !important;
                 visibility: visible !important;
             }
         }
     </style>
+
+    <script>
+        // Force sidebar open on every load/rerun
+        (function keepSidebarOpen() {
+            function openSidebar() {
+                // Streamlit stores sidebar state in localStorage
+                const key = Object.keys(localStorage).find(k => k.includes('sidebar'));
+                if (key) {
+                    localStorage.setItem(key, 'expanded');
+                }
+
+                // If sidebar has collapsed class, click the toggle to reopen
+                const sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
+                const collapsed = window.parent.document.querySelector('[data-testid="collapsedControl"]');
+                
+                if (sidebar && sidebar.getAttribute('aria-expanded') === 'false' && collapsed) {
+                    collapsed.click();
+                }
+            }
+
+            // Run immediately and then watch for changes
+            openSidebar();
+            const observer = new MutationObserver(openSidebar);
+            observer.observe(window.parent.document.body, { attributes: true, subtree: true });
+        })();
+    </script>
 """, unsafe_allow_html=True)
 
 # ── Load .env ────────────────────────────────────────────────────
@@ -84,10 +114,8 @@ for k, v in defaults.items():
         st.session_state[k] = v
 
 # ── Sidebar ──────────────────────────────────────────────────────
-# تمرير نسخة من الـ session_state للدالة
 sidebar_out = render_sidebar(dict(st.session_state))
 
-# تحديث القيم بناءً على تفاعل المستخدم في السايدبار
 for key in ("mode", "mood", "voice_output"):
     st.session_state[key] = sidebar_out[key]
 
