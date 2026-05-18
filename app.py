@@ -11,33 +11,66 @@ st.set_page_config(
     page_title="SemSemty AI 🌸",
     page_icon="🐾",
     layout="wide",
-    initial_sidebar_state="expanded", # إجبار الحالة الأولية على التمدد
+    initial_sidebar_state="expanded",
 )
 
-# 2. حقن CSS لإجبار الشريط الجانبي على البقاء مفتوحاً ومنع إغلاقه
+# 2. حقن CSS + JS لإجبار الشريط الجانبي على البقاء مفتوحاً ومنع إغلاقه
 st.markdown("""
     <style>
-        /* إخفاء زر الإغلاق (X) داخل الشريط الجانبي */
-        [data-testid="stSidebar"] button[kind="header"] {
-            display: none !important;
-        }
-        
-        /* إخفاء زر الفتح (السهيم) في حال حاول النظام إغلاقه */
+        /* إخفاء زر الطي/الإغلاق تماماً */
         [data-testid="collapsedControl"] {
             display: none !important;
         }
 
-        /* تثبيت عرض الشريط الجانبي ومنع اختفائه على الشاشات الصغيرة */
+        /* إخفاء أي زر داخل الشريط الجانبي قد يغلقه */
+        section[data-testid="stSidebar"] > div > div > div > button {
+            display: none !important;
+        }
+
+        /* تثبيت الشريط الجانبي مفتوحاً على جميع أحجام الشاشات */
+        section[data-testid="stSidebar"] {
+            width: 300px !important;
+            min-width: 300px !important;
+            transform: none !important;
+            visibility: visible !important;
+            display: block !important;
+            pointer-events: auto !important;
+        }
+
+        /* منع الإغلاق حتى لو غيّر Streamlit aria-expanded */
+        section[data-testid="stSidebar"][aria-expanded="false"] {
+            transform: none !important;
+            margin-left: 0 !important;
+        }
+
+        /* على الشاشات الصغيرة: تثبيت الشريط فوق المحتوى */
         @media (max-width: 991.98px) {
             section[data-testid="stSidebar"] {
-                width: 300px !important;
                 position: fixed !important;
                 z-index: 1000001 !important;
-                transform: none !important; /* يمنع حركة الـ Slide-out */
-                visibility: visible !important;
             }
         }
     </style>
+
+    <script>
+        // مراقبة أي محاولة من Streamlit لإغلاق الشريط الجانبي وإعادة فتحه فوراً
+        const _reopenSidebar = () => {
+            const sidebar = document.querySelector('section[data-testid="stSidebar"]');
+            if (sidebar && sidebar.getAttribute('aria-expanded') === 'false') {
+                sidebar.setAttribute('aria-expanded', 'true');
+            }
+        };
+
+        const observer = new MutationObserver(_reopenSidebar);
+        observer.observe(document.body, {
+            attributes: true,
+            subtree: true,
+            attributeFilter: ['aria-expanded']
+        });
+
+        // تشغيل فوري عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', _reopenSidebar);
+    </script>
 """, unsafe_allow_html=True)
 
 # ── Load .env ────────────────────────────────────────────────────
@@ -84,10 +117,8 @@ for k, v in defaults.items():
         st.session_state[k] = v
 
 # ── Sidebar ──────────────────────────────────────────────────────
-# تمرير نسخة من الـ session_state للدالة
 sidebar_out = render_sidebar(dict(st.session_state))
 
-# تحديث القيم بناءً على تفاعل المستخدم في السايدبار
 for key in ("mode", "mood", "voice_output"):
     st.session_state[key] = sidebar_out[key]
 
