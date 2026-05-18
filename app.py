@@ -21,56 +21,23 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="header"] {
             display: none !important;
         }
-
-        /* إخفاء زر الفتح/الطي (السهم) في جميع الأحوال */
+        
+        /* إخفاء زر الفتح (السهيم) في حال حاول النظام إغلاقه */
         [data-testid="collapsedControl"] {
             display: none !important;
         }
 
-        /* إخفاء أي زر داخل الشريط الجانبي يتحكم في الطي */
-        section[data-testid="stSidebar"] > div > div > div > button {
-            display: none !important;
-        }
-
-        /* تثبيت الشريط الجانبي مفتوحاً على جميع أحجام الشاشات */
-        section[data-testid="stSidebar"] {
-            width: 300px !important;
-            min-width: 300px !important;
-            transform: none !important;
-            visibility: visible !important;
-            display: block !important;
-            pointer-events: auto !important;
-        }
-
-        /* منع الطي حتى عند ضبط aria-expanded على false */
-        section[data-testid="stSidebar"][aria-expanded="false"] {
-            transform: none !important;
-            margin-left: 0 !important;
-        }
-
-        /* تثبيت الشريط الجانبي ومنع اختفائه على الشاشات الصغيرة */
+        /* تثبيت عرض الشريط الجانبي ومنع اختفائه على الشاشات الصغيرة */
         @media (max-width: 991.98px) {
             section[data-testid="stSidebar"] {
+                width: 300px !important;
                 position: fixed !important;
                 z-index: 1000001 !important;
+                transform: none !important; /* يمنع حركة الـ Slide-out */
+                visibility: visible !important;
             }
         }
     </style>
-
-    <script>
-        // مراقبة أي محاولة من Streamlit لإغلاق الشريط الجانبي وإعادة فتحه فوراً
-        const observer = new MutationObserver(() => {
-            const sidebar = document.querySelector('section[data-testid="stSidebar"]');
-            if (sidebar && sidebar.getAttribute('aria-expanded') === 'false') {
-                sidebar.setAttribute('aria-expanded', 'true');
-            }
-        });
-        observer.observe(document.body, {
-            attributes: true,
-            subtree: true,
-            attributeFilter: ['aria-expanded']
-        });
-    </script>
 """, unsafe_allow_html=True)
 
 # ── Load .env ────────────────────────────────────────────────────
