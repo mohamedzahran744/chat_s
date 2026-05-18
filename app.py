@@ -14,32 +14,53 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 2. UI Persistence & Secret Message Styling
+# 2. Strong UI Overrides & Secret Message Styling
 st.markdown("""
     <style>
-        /* FORCE the toggle button (chevron) to stay visible when sidebar is closed */
-        [data-testid="collapsedControl"] {
+        /* Target BOTH potential Streamlit collapsed button containers */
+        [data-testid="collapsedControl"], 
+        .stSidebarCollapseButton,
+        button[aria-label="Open sidebar"] {
             display: flex !important;
             visibility: visible !important;
             opacity: 1 !important;
-            left: 12px !important;
-            top: 12px !important;
-            color: #ff4bad !important;
-            background-color: white !important;
+            
+            /* Position it prominently in the upper left corner over your background */
+            position: fixed !important;
+            left: 20px !important;
+            top: 20px !important;
+            z-index: 9999999 !important;
+            
+            /* High contrast design against your dark theme */
+            color: #ffffff !important;
+            background-color: #ff4bad !important; /* SemSemty Pink */
             border-radius: 50% !important;
-            box-shadow: 0px 4px 12px rgba(255, 75, 173, 0.3) !important;
-            z-index: 1000000 !important;
-            width: 42px !important;
-            height: 42px !important;
+            width: 45px !important;
+            height: 45px !important;
+            box-shadow: 0px 4px 15px rgba(255, 75, 173, 0.6) !important;
+            
+            /* Center the chevron icon inside the circle */
             justify-content: center !important;
             align-items: center !important;
-            border: 1px solid #ffe0f0 !important;
+            border: 2px solid #ffffff !important;
+            transition: transform 0.2s ease, background-color 0.2s ease !important;
         }
 
-        /* Hover effect for the toggle button */
-        [data-testid="collapsedControl"]:hover {
-            transform: scale(1.1);
-            background-color: #fff0f7 !important;
+        /* Hover animation so it feels responsive and alive */
+        [data-testid="collapsedControl"]:hover,
+        button[aria-label="Open sidebar"]:hover {
+            transform: scale(1.15) !important;
+            background-color: #ff1f93 !important;
+            cursor: pointer !important;
+        }
+
+        /* Ensure the internal icon itself inherits the correct bright white color */
+        [data-testid="collapsedControl"] svg,
+        button[aria-label="Open sidebar"] svg {
+            fill: #ffffff !important;
+            color: #ffffff !important;
+            width: 24px !important;
+            height: 24px !important;
         }
 
         /* Subtle Branding Footer inside the sidebar */
@@ -53,9 +74,9 @@ st.markdown("""
             opacity: 0.7;
         }
         
-        /* Ensure main content doesn't get hidden behind the floating button */
+        /* Add safety spacing to prevent top element collisions */
         .main .block-container {
-            padding-top: 3rem !important;
+            padding-top: 4rem !important;
         }
     </style>
 """, unsafe_allow_html=True)
