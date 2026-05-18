@@ -11,18 +11,23 @@ st.set_page_config(
     page_title="SemSemty AI 🌸",
     page_icon="🐾",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="expanded", # إجبار الحالة الأولية على التمدد
 )
 
-# 2. حقن CSS + JS لإجبار الشريط الجانبي على البقاء مفتوحاً ومنع إغلاقه
+# 2. حقن CSS لإجبار الشريط الجانبي على البقاء مفتوحاً ومنع إغلاقه
 st.markdown("""
     <style>
-        /* إخفاء زر الطي/الإغلاق تماماً */
+        /* إخفاء زر الإغلاق (X) داخل الشريط الجانبي */
+        [data-testid="stSidebar"] button[kind="header"] {
+            display: none !important;
+        }
+
+        /* إخفاء زر الفتح/الطي (السهم) في جميع الأحوال */
         [data-testid="collapsedControl"] {
             display: none !important;
         }
 
-        /* إخفاء أي زر داخل الشريط الجانبي قد يغلقه */
+        /* إخفاء أي زر داخل الشريط الجانبي يتحكم في الطي */
         section[data-testid="stSidebar"] > div > div > div > button {
             display: none !important;
         }
@@ -37,13 +42,13 @@ st.markdown("""
             pointer-events: auto !important;
         }
 
-        /* منع الإغلاق حتى لو غيّر Streamlit aria-expanded */
+        /* منع الطي حتى عند ضبط aria-expanded على false */
         section[data-testid="stSidebar"][aria-expanded="false"] {
             transform: none !important;
             margin-left: 0 !important;
         }
 
-        /* على الشاشات الصغيرة: تثبيت الشريط فوق المحتوى */
+        /* تثبيت الشريط الجانبي ومنع اختفائه على الشاشات الصغيرة */
         @media (max-width: 991.98px) {
             section[data-testid="stSidebar"] {
                 position: fixed !important;
@@ -54,22 +59,17 @@ st.markdown("""
 
     <script>
         // مراقبة أي محاولة من Streamlit لإغلاق الشريط الجانبي وإعادة فتحه فوراً
-        const _reopenSidebar = () => {
+        const observer = new MutationObserver(() => {
             const sidebar = document.querySelector('section[data-testid="stSidebar"]');
             if (sidebar && sidebar.getAttribute('aria-expanded') === 'false') {
                 sidebar.setAttribute('aria-expanded', 'true');
             }
-        };
-
-        const observer = new MutationObserver(_reopenSidebar);
+        });
         observer.observe(document.body, {
             attributes: true,
             subtree: true,
             attributeFilter: ['aria-expanded']
         });
-
-        // تشغيل فوري عند تحميل الصفحة
-        document.addEventListener('DOMContentLoaded', _reopenSidebar);
     </script>
 """, unsafe_allow_html=True)
 
@@ -117,8 +117,10 @@ for k, v in defaults.items():
         st.session_state[k] = v
 
 # ── Sidebar ──────────────────────────────────────────────────────
+# تمرير نسخة من الـ session_state للدالة
 sidebar_out = render_sidebar(dict(st.session_state))
 
+# تحديث القيم بناءً على تفاعل المستخدم في السايدبار
 for key in ("mode", "mood", "voice_output"):
     st.session_state[key] = sidebar_out[key]
 
