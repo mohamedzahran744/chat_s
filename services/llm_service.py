@@ -98,7 +98,7 @@ def chat_with_semsemty(
             ],
         }
 
-        # تعديل هنا: استخدام موديل الرؤية المدعوم رسمياً من Groq لمنع الـ 403
+        # الموديل المدعوم للرؤية وتحليل الأشعة من Groq
         model = "llama-3.2-11b-vision-preview"
     else:
         model = GROQ_MODEL
@@ -121,6 +121,7 @@ def chat_with_semsemty(
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) SemSemtyAI/2.0.0"  # حل مشكلة الـ 403 Forbidden مع urllib و Cloudflare
         },
         method="POST",
     )
