@@ -1,38 +1,47 @@
 """
 services/llm_service.py — Groq API + gTTS voice for SemSemty AI
-Clean production version (no dotenv, no fallback, no UI keys)
+Production version:
+- No user API keys
+- Streamlit Secrets + env only
+- Safe failure handling
 """
 
 import io
 import re
 import base64
 import os
-import urllib.request
 import json
+import urllib.request
 
 from constants.chat_data import GROQ_MODEL, MAX_TOKENS, TEMPERATURE
 from constants.system_prompt import get_system_prompt
 
 
 # ─────────────────────────────────────────────
-# API KEY (ONLY SOURCE OF TRUTH)
+# API KEY (SERVER ONLY)
 # ─────────────────────────────────────────────
-def _get_api_key() -> str:
+def _get_api_key() -> str | None:
     """
-    Reads API key ONLY from environment variables.
-    Works on:
-    - Streamlit Cloud Secrets
-    - local environment variables
+    Get API key ONLY from:
+    1) Streamlit secrets (production)
+    2) environment variables (local dev)
     """
-    key = os.getenv("GROQ_API_KEY")
+    try:
+        import streamlit as st
 
+        if hasattr(st, "secrets") and "GROQ_API_KEY" in st.secrets:
+            return st.secrets["GROQ_API_KEY"]
+    except Exception:
+        pass
+
+    return os.getenv("GROQ_API_KEY")
+
+
+def _ensure_api_key():
+    key = _get_api_key()
     if not key:
-        raise ValueError(
-            "❌ GROQ_API_KEY is missing.\n"
-            "Add it in Streamlit Secrets or environment variables."
-        )
-
-    return key.strip().strip('"').strip("'")
+        return False, None
+    return True, key
 
 
 # ─────────────────────────────────────────────
@@ -47,7 +56,14 @@ def chat_with_semsemty(
     image_media_type: str = "image/jpeg",
 ) -> str:
 
-    api_key = _get_api_key()
+    valid, api_key = _ensure_api_key()
+
+    if not valid:
+        return (
+            "🐱 SemSemty AI is not configured yet 💔\n\n"
+            "Please add GROQ_API_KEY in Streamlit Secrets 🩻✨"
+        )
+
     system = get_system_prompt(mode, mood)
 
     if extra_context:
@@ -60,7 +76,7 @@ def chat_with_semsemty(
         if m.get("role") in ("user", "assistant")
     ]
 
-    clean_messages = clean_messages[-30:]  # limit context
+    clean_messages = clean_messages[-30:]
 
     # ── Vision support ─────────────────────────
     if image_data and clean_messages and clean_messages[-1]["role"] == "user":
@@ -115,7 +131,7 @@ def chat_with_semsemty(
         return result["choices"][0]["message"]["content"]
 
     except Exception as e:
-        raise RuntimeError(f"❌ Groq API error: {str(e)}")
+        return f"💔 Groq API error: {str(e)}"
 
 
 # ─────────────────────────────────────────────
